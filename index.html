@@ -4,25 +4,302 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Postcode Locator</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/5.3.1/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+    <!-- FontAwesome for Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat&display=swap" rel="stylesheet">
+
+    <!-- Custom CSS for Dark and Light Modes -->
     <style>
+        * {box-sizing: border-box;}
+
+        body {
+            font-family: "Montserrat", sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            min-height: 100vh;
+            margin: 0;
+            transition: background 0.2s linear;
+        }
+
+        body.light-mode {
+            background: linear-gradient(to top, #e6e9f0 0%, #eef1f5 100%) no-repeat;
+            color: #525252;
+            background-attachment: fixed; /* Keep background fixed while scrolling */
+        }
+
+        body.dark-mode {
+            background-color: #292c35;
+            color: #e0e0e0;
+        }
+
+        /* Custom Button Styling */
+        .btn-copy {
+            display: inline-block;
+            margin-top: 5px; /* Margin to separate from other elements */
+            padding: 5px 10px; /* Padding for button size */
+            font-size: 14px; /* Adjust font size */
+            font-weight: 600; /* Slightly bolder text */
+            color: #ffffff; /* Default text color */
+            background-color: #4a90e2; /* Button background color */
+            border: none; /* Remove border */
+            border-radius: 25px; /* Rounded button */
+            transition: background-color 0.3s, transform 0.2s; /* Smooth hover effects */
+            cursor: pointer; /* Pointer cursor */
+        }
+
+        /* Hover Effect for Light Mode */
+        .btn-copy:hover {
+            background-color: #357ab8; /* Darker background on hover */
+            transform: translateY(-3px); /* Slight lift on hover */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Light shadow on hover */
+        }
+
+        /* Button Styling for Dark Mode */
+        body.dark-mode .btn-copy {
+            background-color: #555555; /* Darker button background */
+            color: #f1c40f; /* Bright text color for contrast */
+        }
+
+        body.dark-mode .btn-copy:hover {
+            background-color: #333333; /* Darker background on hover */
+            transform: translateY(-3px); /* Slight lift on hover */
+            box-shadow: 0 4px 6px rgba(255, 255, 255, 0.1); /* Light shadow on hover */
+        }
+
+        /* Title Styling */
+        .dark-mode h1, .light-mode h1 {
+            text-align: center;
+            font-family: 'Oswald', Helvetica, sans-serif;
+            font-size: 60px;
+            transform: skewY(-4deg);
+            letter-spacing: 5px;
+            word-spacing: -4px;
+        }
+
+        /* Title Color for Dark and Light Modes */
+        .dark-mode h1 {
+            color: #C00000;
+            text-shadow: 
+                -1px -1px 0 #C00000,
+                -2px -2px 0 #F7B32D,
+                -3px -3px 0 #F7B32D,
+                -4px -4px 0 #F7B32D,
+                -5px -5px 0 #F7B32D,
+                -6px -6px 0 #F7B32D,
+                -7px -7px 0 #F7B32D,
+                -8px -8px 0 #F7B32D,
+                -30px 20px 30px #afafaf;
+        }
+
+        .light-mode h1 {
+            color: #4a90e2;
+            text-shadow: 
+                -1px -1px 0 #4a90e2,
+                -2px -2px 0 #42e44f,
+                -3px -3px 0 #42e44f,
+                -4px -4px 0 #42e44f,
+                -5px -5px 0 #42e44f,
+                -6px -6px 0 #42e44f,
+                -7px -7px 0 #42e44f,
+                -8px -8px 0 #42e44f,
+                -20px 18px 30px #afafaf;
+        }
+
+        /* Input and Button Alignment */
+        .input-group {
+            display: flex; /* Use Flexbox to align items */
+            margin: 0; /* Ensure no unwanted spacing */
+        }
+
+        /* Glow Effect for Input Field and Button in Light Mode */
+        body.light-mode .input-group .form-control,
+        body.light-mode .input-group .btn-primary {
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2); /* Dark glow for light mode */
+            transition: box-shadow 0.3s ease; /* Smooth transition for glow */
+        }
+
+        /* Focus Effect for Input Field in Light Mode */
+        body.light-mode .input-group .form-control:focus,
+        body.light-mode .input-group .btn-primary:focus {
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.4); /* Stronger dark glow on focus */
+        }
+
+        /* Glow Effect for Input Field and Button in Dark Mode */
+        body.dark-mode .input-group .form-control,
+        body.dark-mode .input-group .btn-primary {
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.3); /* White glow for dark mode */
+            transition: box-shadow 0.3s ease; /* Smooth transition for glow */
+        }
+
+        /* Focus Effect for Input Field in Dark Mode */
+        body.dark-mode .input-group .form-control:focus,
+        body.dark-mode .input-group .btn-primary:focus {
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.6); /* Stronger white glow on focus */
+        }
+
+        .input-group .form-control {
+            background-color: #2b2b2b;
+            border: none;
+            color: #ffffff;
+            padding: 10px;
+            border-radius: 20px 0 0 20px; /* Rounded left side */
+            margin: 0;
+            height: 45px; /* Fixed height for consistency */
+            box-sizing: border-box;
+        }
+
+        .input-group .btn-primary {
+            background-color: #4a90e2;
+            border: none;
+            border-radius: 0 20px 20px 0; /* Rounded right side */
+            margin: 0;
+            padding: 0 20px; /* Uniform padding */
+            height: 45px; /* Fixed height to match input */
+            box-sizing: border-box;
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+
+        .input-group .btn-primary:hover {
+            background-color: #357ab8;
+            box-shadow: 0 0 8px #357ab8;
+        }
+
+        /* Container for Input and Button */
+        .search-container {
+            padding-bottom: 20px; /* Padding below the search bar and button */
+            width: 100%; /* Ensure it takes full width */
+            margin: 0 auto; /* Center it */
+        }
+
+        /* Map Container */
         #map {
             height: 500px;
-            width: 100%;
+            width: 100%; /* Make the map stretch across the screen */
+            margin-bottom: 20px;
+            border: 2px solid #2b2b2b;
         }
+
+        /* Info Box Styling */
         #info {
-            margin-top: 20px;
+            background-color: #2b2b2b;
+            color: #e0e0e0;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 600px;
+            margin: 20px auto;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            text-align: left;
+            opacity: 0; /* Start hidden */
+            max-height: 0; /* Collapsed initially */
+            overflow: hidden; /* Prevent content from spilling out */
+            transition: opacity 0.5s ease, max-height 0.5s ease; /* Smooth fade-in effect */
+        }
+
+        /* Show Class for Info Box */
+        #info.show {
+            opacity: 1; /* Fade-in effect */
+            max-height: 1000px; /* Expand on show */
+        }
+
+        /* Paragraph Spacing */
+        #info p {
+            margin: 5px 0; /* Spacing between paragraphs */
+        }
+
+        /* Centered Container */
+        .container {
+            text-align: center;
+            width: 100%; /* Ensure the container is full width */
+            padding: 0 15px; /* Optional padding */
+        }
+
+        /* Toggle Button Styling */
+        .checkbox {
+            opacity: 0;
+            position: absolute;
+        }
+
+        .checkbox-label {
+            background-color: #111;
+            width: 50px;
+            height: 26px;
+            border-radius: 50px;
+            position: relative;
+            padding: 5px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .fa-moon {color: #f1c40f;}
+
+        .fa-sun {color: #f39c12;}
+
+        .checkbox-label .ball {
+            background-color: #fff;
+            width: 22px;
+            height: 22px;
+            position: absolute;
+            left: 2px;
+            top: 2px;
+            border-radius: 50%;
+            transition: transform 0.2s linear;
+        }
+
+        .checkbox:checked + .checkbox-label .ball {
+            transform: translateX(24px);
         }
     </style>
 </head>
-<body>
-    <h1>Postcode Locator</h1>
-    <input type="text" id="postcode" placeholder="Enter postcode">
-    <button onclick="fetchPostcodeData()">Locate</button>
-    <div id="map"></div>
-    <div id="info"></div>
+<body class="dark-mode">
 
+    <!-- Toggle Theme Button -->
+    <div style="position: fixed; top: 20px; right: 20px; z-index: 1000;">
+        <input type="checkbox" class="checkbox" id="checkbox">
+        <label for="checkbox" class="checkbox-label">
+            <i class="fas fa-moon"></i>
+            <i class="fas fa-sun"></i>
+            <span class="ball"></span>
+        </label>
+    </div>
+
+    <div class="container py-5">
+        <h1>Postcode<br>Locator</h1>
+        
+        <div class="row justify-content-center mb-4">
+            <div class="col-md-6 search-container">
+                <div class="input-group">
+                    <input type="text" id="postcode" class="form-control" placeholder="Enter postcode">
+                    <button class="btn btn-primary" onclick="fetchPostcodeData()">Locate</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Map Container should take full width -->
+        <div id="map" class="mb-4"></div>
+
+        <div id="info" class="shadow-sm"></div>
+    </div>
+
+    <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    <!-- Bootstrap JS and dependencies (Popper.js) -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.3.1/js/bootstrap.bundle.min.js"></script>
+
+    <!-- External JavaScript File -->
     <script src="script.js"></script>
 </body>
 </html>
